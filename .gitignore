@@ -3,3 +3,8 @@ dist
 *.tsbuildinfo
 coverage
 .DS_Store
+
+# local ignored folders
+temp/
+feature/
+scratch/

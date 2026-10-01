@@ -45,6 +45,13 @@ const tiles = () => {
 };
 const tileLabels = () => tiles().map((t) => within(t).getByTestId('tile-label').textContent);
 
+/** Opens a toolbar dropdown and clicks one of its options. */
+async function pick(user: ReturnType<typeof userEvent.setup>, trigger: HTMLElement, option: string) {
+  await user.click(trigger);
+  const list = document.getElementById(trigger.getAttribute('aria-controls')!)!;
+  await user.click(within(list).getByRole('option', { name: option }));
+}
+
 beforeEach(() => {
   localStorage.clear();
   document.documentElement.removeAttribute('data-theme');
@@ -113,13 +120,16 @@ describe('layout', () => {
     await addFiles(user, png());
     await user.click(screen.getByRole('radio', { name: 'PNG' }));
     const tools = screen.getByRole('toolbar', { name: /page tools/i });
-    const selects = within(tools).getAllByRole('combobox');
-    expect(selects.map((s) => s.getAttribute('aria-label'))).toEqual(['Tile size', 'Items per row']);
-    for (const select of selects) {
-      expect(select).toHaveClass('picker-select');
-      expect(select.closest('label')).toHaveClass('picker');
-      expect(select.closest('label')).toHaveAttribute('title');
+    const pickers = within(tools).getAllByRole('combobox');
+    expect(pickers.map((p) => p.getAttribute('aria-label'))).toEqual(['Tile size', 'Items per row']);
+    for (const picker of pickers) {
+      expect(picker.tagName).toBe('BUTTON');
+      expect(picker).toHaveClass('picker-button');
+      expect(picker).toHaveAttribute('aria-haspopup', 'listbox');
+      expect(picker).toHaveAttribute('title');
+      expect(picker.closest('.picker')).not.toBeNull();
     }
+    expect(tools.querySelector('select')).toBeNull();
   });
 
   it('hides the toolbar until there are pages', () => {
@@ -135,21 +145,23 @@ describe('tile size', () => {
   it('offers five sizes and defaults to medium', async () => {
     const { user } = setup();
     await addFiles(user, png());
-    expect(within(sizePicker()).getAllByRole('option').map((o) => o.textContent)).toEqual([
+    await user.click(sizePicker());
+    expect(within(screen.getByRole('listbox', { name: /tile size/i })).getAllByRole('option').map((o) => o.textContent)).toEqual([
       'Extra small',
       'Small',
       'Medium',
       'Large',
       'Extra large',
     ]);
-    expect(sizePicker()).toHaveDisplayValue('Medium');
+    await user.keyboard('{Escape}');
+    expect(sizePicker()).toHaveTextContent('Medium');
     expect(grid().style.getPropertyValue('--tile-size')).toBe('240px');
   });
 
   it('can be changed from the toolbar and is remembered', async () => {
     const { user } = setup();
     await addFiles(user, png());
-    await user.selectOptions(sizePicker(), 'Large');
+    await pick(user, sizePicker(), 'Large');
     expect(grid().style.getPropertyValue('--tile-size')).toBe('320px');
     expect(localStorage.getItem('repile-tile-size')).toBe('320');
   });
@@ -158,14 +170,15 @@ describe('tile size', () => {
     localStorage.setItem('repile-tile-size', '160');
     const { user } = setup();
     await addFiles(user, png());
-    expect(sizePicker()).toHaveDisplayValue('Extra small');
+    expect(sizePicker()).toHaveTextContent('Extra small');
   });
 
   it('falls back to medium for sizes that are not offered', async () => {
     localStorage.setItem('repile-tile-size', '180');
     const { user } = setup();
     await addFiles(user, png());
-    expect(sizePicker()).toHaveDisplayValue('Medium');
+    await user.keyboard('{Escape}');
+    expect(sizePicker()).toHaveTextContent('Medium');
   });
 });
 
@@ -326,14 +339,14 @@ describe('image mode', () => {
     await user.click(screen.getByRole('radio', { name: 'PNG' }));
     expect(screen.queryByRole('list', { name: 'Pages' })).not.toBeInTheDocument();
     expect(within(collage()).getAllByRole('listitem')).toHaveLength(4);
-    expect(perRow()).toHaveDisplayValue('3 per row');
+    expect(perRow()).toHaveTextContent('3 per row');
   });
 
   it('lays items out in rows of equal height', async () => {
     const { user } = setup();
     await addFiles(user, png('a.png'), png('b.png'), png('c.png'), png('d.png'));
     await user.click(screen.getByRole('radio', { name: 'JPEG' }));
-    await user.selectOptions(perRow(), '2 per row');
+    await pick(user, perRow(), '2 per row');
     // four 100x200 images, two per row: a 200x400 collage, each item a quarter
     expect(collage().style.aspectRatio).toBe('200 / 400');
     const boxes = tiles().map((t) => [t.style.left, t.style.top, t.style.width, t.style.height]);
@@ -349,10 +362,10 @@ describe('image mode', () => {
     const { user } = setup();
     await addFiles(user, png());
     await user.click(screen.getByRole('radio', { name: 'PNG' }));
-    await user.selectOptions(perRow(), '5 per row');
-    expect(perRow()).toHaveDisplayValue('5 per row');
+    await pick(user, perRow(), '5 per row');
+    expect(perRow()).toHaveTextContent('5 per row');
     await user.click(screen.getByRole('button', { name: /^undo/i }));
-    expect(perRow()).toHaveDisplayValue('3 per row');
+    expect(perRow()).toHaveTextContent('3 per row');
     expect(tiles()).toHaveLength(1);
   });
 
@@ -360,7 +373,7 @@ describe('image mode', () => {
     const { user, exporter } = setup();
     await addFiles(user, png(), png());
     await user.click(screen.getByRole('radio', { name: 'PNG' }));
-    await user.selectOptions(perRow(), '2 per row');
+    await pick(user, perRow(), '2 per row');
     const exportButton = screen.getByRole('button', { name: /^export/i });
     expect(exportButton).toHaveTextContent(/^Export$/);
     await act(() => user.click(exportButton));

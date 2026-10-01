@@ -7,7 +7,7 @@ import type { Bitmap } from './render';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 /** Long side of tile previews in CSS pixels (scaled by devicePixelRatio). */
-const PREVIEW_SIZE = 360;
+export const PREVIEW_SIZE = 520;
 
 export interface SourcePage {
   /** Unrotated size: points for PDF pages, pixels for images. */

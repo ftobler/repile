@@ -12,7 +12,7 @@ interface Props {
 }
 
 /** Canvas preview of a source page with crop and rotation applied. */
-export function PageThumb({ page, rotation, crop, maxSize = 360, className }: Props) {
+export function PageThumb({ page, rotation, crop, maxSize = 520, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

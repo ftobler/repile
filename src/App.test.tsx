@@ -65,6 +65,37 @@ describe('theme', () => {
   });
 });
 
+describe('tile size', () => {
+  const grid = () => screen.getByRole('list', { name: 'Pages' });
+
+  it('has a bigger default', async () => {
+    const { user } = setup();
+    await addFiles(user, png());
+    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('240');
+    expect(grid().style.getPropertyValue('--tile-size')).toBe('240px');
+  });
+
+  it('can be changed from the top bar and is remembered', async () => {
+    const { user } = setup();
+    await addFiles(user, png());
+    fireEvent.change(screen.getByRole('slider', { name: /tile size/i }), { target: { value: '320' } });
+    expect(grid().style.getPropertyValue('--tile-size')).toBe('320px');
+    expect(localStorage.getItem('repile-tile-size')).toBe('320');
+  });
+
+  it('restores the remembered size', () => {
+    localStorage.setItem('repile-tile-size', '180');
+    setup();
+    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('180');
+  });
+
+  it('ignores garbage in storage', () => {
+    localStorage.setItem('repile-tile-size', 'huge');
+    setup();
+    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('240');
+  });
+});
+
 describe('loading files', () => {
   it('shows a drop zone while empty', () => {
     setup();

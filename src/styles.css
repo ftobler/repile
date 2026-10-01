@@ -98,6 +98,25 @@ input {
   gap: 10px;
 }
 
+.topbar-settings {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tile-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.tile-size input {
+  width: 110px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .brand-name {
   font-weight: 700;
   font-size: 17px;
@@ -338,7 +357,7 @@ label.button:has(:focus-visible) {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--tile-size, 240px), 100%), 1fr));
   gap: 16px;
 }
 
@@ -595,7 +614,10 @@ label.button:has(:focus-visible) {
   }
 
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
+  }
+
+  .tile-size input {
+    width: 72px;
   }
 }

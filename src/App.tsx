@@ -5,11 +5,13 @@ import { ExportBar } from './components/ExportBar';
 import { Icon } from './components/Icon';
 import { PageGrid } from './components/PageGrid';
 import { ThemeToggle } from './components/ThemeToggle';
+import { TileSizeSlider } from './components/TileSizeSlider';
 import type { ExportResult, SourceLookup } from './lib/export';
 import type { Source } from './lib/sources';
 import { fileKind, type ExportFormat } from './model/fileKind';
 import { initialPagesState, pagesReducer, type Page } from './model/pages';
 import { useTheme } from './useTheme';
+import { useTileSize } from './useTileSize';
 
 export interface AppProps {
   loadSource?: (file: File) => Promise<Source>;
@@ -36,6 +38,7 @@ function pagesOf(source: Source): Page[] {
 
 export default function App({ loadSource = defaultLoad, exporter = defaultExport, download = defaultDownload }: AppProps) {
   const { theme, toggle } = useTheme();
+  const [tileSize, setTileSize] = useTileSize();
   const [{ pages }, dispatch] = useReducer(pagesReducer, initialPagesState);
   const [sources, setSources] = useState<ReadonlyMap<string, Source>>(new Map());
   const [errors, setErrors] = useState<string[]>([]);
@@ -114,7 +117,10 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
           <span className="brand-name">Repile</span>
           <span className="muted brand-tag">rearrange your pages</span>
         </div>
-        <ThemeToggle theme={theme} onToggle={toggle} />
+        <div className="topbar-settings">
+          <TileSizeSlider value={tileSize} onChange={setTileSize} />
+          <ThemeToggle theme={theme} onToggle={toggle} />
+        </div>
       </header>
 
       {pages.length > 0 && (
@@ -156,6 +162,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
         ) : (
           <PageGrid
             pages={pages}
+            tileSize={tileSize}
             sourcePage={sourcePage}
             onMove={(id, overId) => dispatch({ type: 'move', id, overId })}
             onRotate={(id, by) => dispatch({ type: 'rotate', id, by })}

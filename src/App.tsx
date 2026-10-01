@@ -5,7 +5,7 @@ import { ExportBar } from './components/ExportBar';
 import { Icon } from './components/Icon';
 import { PageGrid } from './components/PageGrid';
 import { ThemeToggle } from './components/ThemeToggle';
-import { TileSizeSlider } from './components/TileSizeSlider';
+import { TileSizePicker } from './components/TileSizePicker';
 import type { ExportResult, SourceLookup } from './lib/export';
 import type { Source } from './lib/sources';
 import { fileKind, type ExportFormat } from './model/fileKind';
@@ -133,7 +133,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
               <Icon name="trash" />
             </button>
             <span className="divider" aria-hidden="true" />
-            <TileSizeSlider value={tileSize} onChange={setTileSize} />
+            <TileSizePicker value={tileSize} onChange={setTileSize} />
             <span className="divider" aria-hidden="true" />
             <ExportBar format={format} onFormat={setFormat} onExport={onExport} busy={exporting} pageCount={pages.length} />
           </div>

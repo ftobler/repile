@@ -73,7 +73,7 @@ describe('layout', () => {
     for (const name of [/add files/i, /rotate all left/i, /rotate all right/i, /clear all/i, /^export/i]) {
       expect(within(tools).getByRole('button', { name })).toBeInTheDocument();
     }
-    expect(within(tools).getByRole('slider', { name: /tile size/i })).toBeInTheDocument();
+    expect(within(tools).getByRole('combobox', { name: /tile size/i })).toBeInTheDocument();
     expect(within(tools).queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
   });
 
@@ -85,34 +85,42 @@ describe('layout', () => {
 
 describe('tile size', () => {
   const grid = () => screen.getByRole('list', { name: 'Pages' });
+  const sizePicker = () => screen.getByRole('combobox', { name: /tile size/i });
 
-  it('has a bigger default', async () => {
+  it('offers five sizes and defaults to medium', async () => {
     const { user } = setup();
     await addFiles(user, png());
-    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('240');
+    expect(within(sizePicker()).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'Extra small',
+      'Small',
+      'Medium',
+      'Large',
+      'Extra large',
+    ]);
+    expect(sizePicker()).toHaveDisplayValue('Medium');
     expect(grid().style.getPropertyValue('--tile-size')).toBe('240px');
   });
 
-  it('can be changed from the top bar and is remembered', async () => {
+  it('can be changed from the toolbar and is remembered', async () => {
     const { user } = setup();
     await addFiles(user, png());
-    fireEvent.change(screen.getByRole('slider', { name: /tile size/i }), { target: { value: '320' } });
+    await user.selectOptions(sizePicker(), 'Large');
     expect(grid().style.getPropertyValue('--tile-size')).toBe('320px');
     expect(localStorage.getItem('repile-tile-size')).toBe('320');
   });
 
   it('restores the remembered size', async () => {
+    localStorage.setItem('repile-tile-size', '160');
+    const { user } = setup();
+    await addFiles(user, png());
+    expect(sizePicker()).toHaveDisplayValue('Extra small');
+  });
+
+  it('falls back to medium for sizes that are not offered', async () => {
     localStorage.setItem('repile-tile-size', '180');
     const { user } = setup();
     await addFiles(user, png());
-    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('180');
-  });
-
-  it('ignores garbage in storage', async () => {
-    localStorage.setItem('repile-tile-size', 'huge');
-    const { user } = setup();
-    await addFiles(user, png());
-    expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('240');
+    expect(sizePicker()).toHaveDisplayValue('Medium');
   });
 });
 

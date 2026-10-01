@@ -1,11 +1,18 @@
 import { useStoredState } from './useStoredState';
 
-export const TILE_SIZE = { min: 140, max: 480, step: 20, default: 240 } as const;
+/** Minimum tile widths in CSS pixels; the grid stretches tiles to fill each row. */
+export const TILE_SIZES = [
+  { value: 160, label: 'Extra small' },
+  { value: 200, label: 'Small' },
+  { value: 240, label: 'Medium' },
+  { value: 320, label: 'Large' },
+  { value: 420, label: 'Extra large' },
+] as const;
 
-/** Minimum tile width in CSS pixels; the grid stretches tiles to fill each row. */
+export const DEFAULT_TILE_SIZE = 240;
+
 export function useTileSize() {
-  return useStoredState<number>('repile-tile-size', TILE_SIZE.default, (raw) => {
-    const n = Number(raw);
-    return Number.isFinite(n) && n >= TILE_SIZE.min && n <= TILE_SIZE.max ? n : undefined;
-  });
+  return useStoredState<number>('repile-tile-size', DEFAULT_TILE_SIZE, (raw) =>
+    TILE_SIZES.find((s) => String(s.value) === raw)?.value,
+  );
 }

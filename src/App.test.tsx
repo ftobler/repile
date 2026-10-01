@@ -108,6 +108,20 @@ describe('layout', () => {
     expect(within(tools).queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
   });
 
+  it('styles every toolbar dropdown the same, keeping its label and hint', async () => {
+    const { user } = setup();
+    await addFiles(user, png());
+    await user.click(screen.getByRole('radio', { name: 'PNG' }));
+    const tools = screen.getByRole('toolbar', { name: /page tools/i });
+    const selects = within(tools).getAllByRole('combobox');
+    expect(selects.map((s) => s.getAttribute('aria-label'))).toEqual(['Tile size', 'Items per row']);
+    for (const select of selects) {
+      expect(select).toHaveClass('picker-select');
+      expect(select.closest('label')).toHaveClass('picker');
+      expect(select.closest('label')).toHaveAttribute('title');
+    }
+  });
+
   it('hides the toolbar until there are pages', () => {
     setup();
     expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();

@@ -196,46 +196,83 @@ a.tool {
   color: var(--text);
 }
 
+/* Toolbar dropdowns: a native <select> dressed like .button, with a themed chevron. */
 .picker {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   color: var(--muted);
 }
 
-.picker svg {
+.picker-icon,
+.picker-chevron {
   position: absolute;
-  left: 10px;
+  display: grid;
+  place-items: center;
   pointer-events: none;
+  transition: color 0.15s;
 }
 
-.picker select {
+.picker-icon {
+  left: 10px;
+}
+
+.picker-chevron {
+  right: 11px;
+}
+
+.picker-select {
   appearance: none;
   height: 34px;
-  padding: 0 28px 0 32px;
-  border: 0;
+  margin: 0;
+  padding: 0 30px 0 34px;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: transparent
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-    no-repeat right 10px center;
+  background: var(--surface-2);
   color: var(--text);
+  color-scheme: inherit;
+  font: inherit;
   font-size: 13px;
   font-weight: 500;
+  line-height: 1;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.picker select:hover {
-  background-color: var(--surface-2);
+.picker:hover .picker-select {
+  border-color: var(--muted);
 }
 
-.picker select:focus-visible {
+.picker:hover .picker-icon,
+.picker:hover .picker-chevron,
+.picker:focus-within .picker-icon,
+.picker:focus-within .picker-chevron {
+  color: var(--text);
+}
+
+.picker-select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.picker option {
+.picker-select:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.picker:has(.picker-select:disabled) {
+  pointer-events: none;
+}
+
+/* the opened list, where the browser lets us style it */
+.picker-select option {
   background: var(--surface);
   color: var(--text);
+}
+
+.picker-select option:checked {
+  background: var(--surface-2);
+  font-weight: 600;
 }
 
 .content {

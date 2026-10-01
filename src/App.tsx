@@ -117,31 +117,31 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
           <span className="brand-name">Repile</span>
           <span className="muted brand-tag">rearrange your pages</span>
         </div>
-        <div className="topbar-settings">
-          <TileSizeSlider value={tileSize} onChange={setTileSize} />
+        {pages.length > 0 && (
+          <div className="tools" role="toolbar" aria-label="Page tools">
+            <span className="count" title={`${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`}>
+              {pages.length}
+            </span>
+            <FileButton onFiles={addFiles} label="Add files" />
+            <button type="button" className="tool" aria-label="Rotate all left" title="Rotate all left" onClick={() => dispatch({ type: 'rotateAll', by: -90 })}>
+              <Icon name="rotateLeft" />
+            </button>
+            <button type="button" className="tool" aria-label="Rotate all right" title="Rotate all right" onClick={() => dispatch({ type: 'rotateAll', by: 90 })}>
+              <Icon name="rotateRight" />
+            </button>
+            <button type="button" className="tool danger" aria-label="Clear all" title="Clear all" onClick={() => dispatch({ type: 'clear' })}>
+              <Icon name="trash" />
+            </button>
+            <span className="divider" aria-hidden="true" />
+            <TileSizeSlider value={tileSize} onChange={setTileSize} />
+            <span className="divider" aria-hidden="true" />
+            <ExportBar format={format} onFormat={setFormat} onExport={onExport} busy={exporting} pageCount={pages.length} />
+          </div>
+        )}
+        <div className="theme">
           <ThemeToggle theme={theme} onToggle={toggle} />
         </div>
       </header>
-
-      {pages.length > 0 && (
-        <div className="toolbar">
-          <span className="muted count">
-            {pages.length} {pages.length === 1 ? 'page' : 'pages'}
-          </span>
-          <FileButton onFiles={addFiles} label="Add files" />
-          <button type="button" className="button ghost" onClick={() => dispatch({ type: 'rotateAll', by: -90 })}>
-            <Icon name="rotateLeft" /> Rotate all
-          </button>
-          <button type="button" className="button ghost" onClick={() => dispatch({ type: 'rotateAll', by: 90 })}>
-            <Icon name="rotateRight" /> Rotate all
-          </button>
-          <button type="button" className="button ghost danger" onClick={() => dispatch({ type: 'clear' })}>
-            <Icon name="trash" /> Clear all
-          </button>
-          <span className="spacer" />
-          <ExportBar format={format} onFormat={setFormat} onExport={onExport} busy={exporting} pageCount={pages.length} />
-        </div>
-      )}
 
       {errors.length > 0 && (
         <div className="errors" role="alert">

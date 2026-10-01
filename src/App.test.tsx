@@ -65,6 +65,24 @@ describe('theme', () => {
   });
 });
 
+describe('layout', () => {
+  it('keeps all page tools in one floating toolbar, separate from the theme toggle', async () => {
+    const { user } = setup();
+    await addFiles(user, png());
+    const tools = screen.getByRole('toolbar', { name: /page tools/i });
+    for (const name of [/add files/i, /rotate all left/i, /rotate all right/i, /clear all/i, /^export/i]) {
+      expect(within(tools).getByRole('button', { name })).toBeInTheDocument();
+    }
+    expect(within(tools).getByRole('slider', { name: /tile size/i })).toBeInTheDocument();
+    expect(within(tools).queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
+  });
+
+  it('hides the toolbar until there are pages', () => {
+    setup();
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+  });
+});
+
 describe('tile size', () => {
   const grid = () => screen.getByRole('list', { name: 'Pages' });
 
@@ -83,15 +101,17 @@ describe('tile size', () => {
     expect(localStorage.getItem('repile-tile-size')).toBe('320');
   });
 
-  it('restores the remembered size', () => {
+  it('restores the remembered size', async () => {
     localStorage.setItem('repile-tile-size', '180');
-    setup();
+    const { user } = setup();
+    await addFiles(user, png());
     expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('180');
   });
 
-  it('ignores garbage in storage', () => {
+  it('ignores garbage in storage', async () => {
     localStorage.setItem('repile-tile-size', 'huge');
-    setup();
+    const { user } = setup();
+    await addFiles(user, png());
     expect(screen.getByRole('slider', { name: /tile size/i })).toHaveValue('240');
   });
 });

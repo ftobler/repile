@@ -50,6 +50,19 @@ function rotated(p: Page, by: number): Page {
   return rotation === p.rotation ? p : { ...p, rotation };
 }
 
+function sameRect(a: Rect | null, b: Rect | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+}
+
+/** Source ids referenced by any of the given states, including history snapshots. */
+export function referencedSourceIds(states: PagesState[]): Set<string> {
+  const ids = new Set<string>();
+  for (const state of states) for (const page of state.pages) ids.add(page.sourceId);
+  return ids;
+}
+
 export function pagesReducer(state: PagesState, action: PagesAction): PagesState {
   switch (action.type) {
     case 'add':
@@ -73,7 +86,7 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
       return pages.length === state.pages.length ? state : { ...state, pages };
     }
     case 'crop':
-      return update(state, action.id, (p) => (p.crop === action.crop ? p : { ...p, crop: action.crop }));
+      return update(state, action.id, (p) => (sameRect(p.crop, action.crop) ? p : { ...p, crop: action.crop }));
     case 'duplicate': {
       const i = state.pages.findIndex((p) => p.id === action.id);
       if (i < 0) return state;
@@ -84,6 +97,7 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
     case 'clear':
       return state.pages.length ? { ...state, pages: [] } : state;
     case 'perRow': {
+      if (!Number.isFinite(action.value)) return state;
       const perRow = Math.max(1, Math.round(action.value));
       return perRow === state.perRow ? state : { ...state, perRow };
     }

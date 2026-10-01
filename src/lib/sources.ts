@@ -30,6 +30,8 @@ export interface Source {
   mime: string;
   bytes: ArrayBuffer;
   pages: SourcePage[];
+  /** Releases the underlying document/bitmap. Safe to call once. */
+  dispose?: () => void;
 }
 
 function memo<T>(fn: () => Promise<T>): () => Promise<T> {
@@ -39,7 +41,8 @@ function memo<T>(fn: () => Promise<T>): () => Promise<T> {
 
 async function loadPdf(id: string, file: File, bytes: ArrayBuffer): Promise<Source> {
   // pdf.js transfers the buffer to its worker, so hand it a copy.
-  const doc = await pdfjs.getDocument({ data: bytes.slice(0) }).promise;
+  const task = pdfjs.getDocument({ data: bytes.slice(0) });
+  const doc = await task.promise;
   const pages: SourcePage[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
@@ -62,7 +65,7 @@ async function loadPdf(id: string, file: File, bytes: ArrayBuffer): Promise<Sour
       render,
     });
   }
-  return { id, name: file.name, kind: 'pdf', mime: 'application/pdf', bytes, pages };
+  return { id, name: file.name, kind: 'pdf', mime: 'application/pdf', bytes, pages, dispose: () => void task.destroy() };
 }
 
 async function loadImage(id: string, file: File, bytes: ArrayBuffer): Promise<Source> {
@@ -74,6 +77,7 @@ async function loadImage(id: string, file: File, bytes: ArrayBuffer): Promise<So
     kind: 'image',
     mime: file.type || 'image/png',
     bytes,
+    dispose: () => bitmap.close(),
     pages: [
       {
         width: bitmap.width,

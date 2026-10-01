@@ -17,10 +17,13 @@ export function PageThumb({ page, rotation, crop, maxSize = 520, className }: Pr
 
   useEffect(() => {
     let cancelled = false;
-    page.preview().then((bitmap) => {
-      if (cancelled || !ref.current) return;
-      drawPage(bitmap, { rotation, crop, maxSize: maxSize * (window.devicePixelRatio || 1) }, ref.current);
-    });
+    page
+      .preview()
+      .then((bitmap) => {
+        if (cancelled || !ref.current) return;
+        drawPage(bitmap, { rotation, crop, maxSize: maxSize * (window.devicePixelRatio || 1) }, ref.current);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };

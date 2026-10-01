@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type DragEvent } from 'react';
 import { CropDialog } from './components/CropDialog';
 import { EmptyState, FileButton } from './components/DropZone';
 import { ExportBar } from './components/ExportBar';
@@ -11,10 +11,10 @@ import { TileSizePicker } from './components/TileSizePicker';
 import type { ExportResult, SourceLookup } from './lib/export';
 import { PDF_EXPORT_SCALE } from './lib/render';
 import type { Source } from './lib/sources';
+import { appReducer, droppedSources, initialAppState } from './model/appState';
 import { collageLayout, exportPixelSize } from './model/collage';
 import { fileKind, type ExportFormat } from './model/fileKind';
-import { initHistory, withHistory } from './model/history';
-import { initialPagesState, pagesReducer, type Page } from './model/pages';
+import type { Page } from './model/pages';
 import { useTheme } from './useTheme';
 import { useTileSize } from './useTileSize';
 
@@ -27,9 +27,10 @@ export interface AppProps {
 // Loaded lazily so pdf.js / pdf-lib stay out of the initial bundle.
 const defaultLoad: NonNullable<AppProps['loadSource']> = (file) => import('./lib/sources').then((m) => m.loadSource(file));
 const defaultExport: NonNullable<AppProps['exporter']> = (...args) => import('./lib/export').then((m) => m.exportPages(...args));
-const defaultDownload: NonNullable<AppProps['download']> = (r) => void import('./lib/export').then((m) => m.download(r));
-
-const historyReducer = withHistory(pagesReducer);
+const defaultDownload: NonNullable<AppProps['download']> = (r) =>
+  void import('./lib/export')
+    .then((m) => m.download(r))
+    .catch((err) => console.error(err));
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = isMac ? '⌘' : 'Ctrl+';
@@ -57,17 +58,24 @@ function pagesOf(source: Source): Page[] {
 export default function App({ loadSource = defaultLoad, exporter = defaultExport, download = defaultDownload }: AppProps) {
   const { theme, toggle } = useTheme();
   const [tileSize, setTileSize] = useTileSize();
-  const [history, dispatch] = useReducer(historyReducer, initialPagesState, initHistory);
+  const [state, dispatch] = useReducer(appReducer, initialAppState);
+  const { history, sources } = state;
   const { pages, perRow } = history.present;
   const canUndo = history.past.length > 0;
   const canRedo = history.future.length > 0;
-  const [sources, setSources] = useState<ReadonlyMap<string, Source>>(new Map());
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [exporting, setExporting] = useState(false);
   const [cropping, setCropping] = useState<string | null>(null);
+
+  // Release pdf documents and image bitmaps once the reducer drops them.
+  const prevSources = useRef(sources);
+  useEffect(() => {
+    for (const source of droppedSources(prevSources.current, sources)) source.dispose?.();
+    prevSources.current = sources;
+  }, [sources]);
 
   const addFiles = useCallback(
     async (files: File[]) => {
@@ -79,7 +87,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
         setLoading((n) => n + 1);
         try {
           const source = await loadSource(file);
-          setSources((m) => new Map(m).set(source.id, source));
+          dispatch({ type: 'source', source });
           dispatch({ type: 'add', pages: pagesOf(source) });
         } catch (err) {
           console.error(err);

@@ -71,7 +71,7 @@ export function CropDialog({ page, sourcePage, onApply, onClose }: Props) {
             <div
               className="crop-rect"
               style={{ left: pct(rect.x), top: pct(rect.y), width: pct(rect.w), height: pct(rect.h) }}
-              onPointerDown={(e) => begin(e, (start) => ({ mode: 'move', start, rect }))}
+              onPointerDown={(e) => begin(e, (start) => (isFull(rect) ? { mode: 'draw', start } : { mode: 'move', start, rect }))}
             >
               {CORNERS.map((corner) => (
                 <span

@@ -1,4 +1,4 @@
-import { DEFAULT_PER_ROW, initialPagesState, pagesReducer, type Page, type PagesState } from './pages';
+import { DEFAULT_PER_ROW, initialPagesState, pagesReducer, referencedSourceIds, type Page, type PagesState } from './pages';
 
 const page = (id: string, extra: Partial<Page> = {}): Page => ({
   id,
@@ -63,6 +63,18 @@ describe('pagesReducer', () => {
     expect(s.pages[0].crop).toBeNull();
   });
 
+  it('treats a value-equal crop as no change', () => {
+    const crop = { x: 0.1, y: 0.1, w: 0.5, h: 0.5 };
+    const s = pagesReducer(state('a'), { type: 'crop', id: 'a', crop });
+    expect(pagesReducer(s, { type: 'crop', id: 'a', crop: { ...crop } })).toBe(s);
+  });
+
+  it('ignores per-row values that are not finite numbers', () => {
+    const s = state('a');
+    expect(pagesReducer(s, { type: 'perRow', value: NaN })).toBe(s);
+    expect(pagesReducer(s, { type: 'perRow', value: Infinity })).toBe(s);
+  });
+
   it('duplicates a page right after the original with a new id', () => {
     const s = pagesReducer(state('a', 'b'), { type: 'duplicate', id: 'a', newId: 'a2' });
     expect(ids(s)).toEqual(['a', 'a2', 'b']);
@@ -114,5 +126,14 @@ describe('pagesReducer', () => {
     pagesReducer(s, { type: 'rotate', id: 'a', by: 90 });
     pagesReducer(s, { type: 'move', id: 'a', overId: 'b' });
     expect(s).toEqual(snapshot);
+  });
+});
+
+describe('referencedSourceIds', () => {
+  it('collects the source ids of every state, without duplicates', () => {
+    const a: PagesState = { ...initialPagesState, pages: [page('a', { sourceId: 's1' }), page('b', { sourceId: 's2' })] };
+    const b: PagesState = { ...initialPagesState, pages: [page('c', { sourceId: 's1' })] };
+    expect(referencedSourceIds([a, b])).toEqual(new Set(['s1', 's2']));
+    expect(referencedSourceIds([initialPagesState])).toEqual(new Set());
   });
 });

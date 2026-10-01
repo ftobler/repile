@@ -55,7 +55,9 @@ export async function exportPdf(pages: Page[], lookup: SourceLookup): Promise<Ui
       const blob = await rasterize({ ...page, rotation: 0 }, source, format);
       const data = new Uint8Array(await blob.arrayBuffer());
       const img = format === 'jpeg' ? await out.embedJpg(data) : await out.embedPng(data);
-      const pdfPage = out.addPage([img.width * PX_TO_PT, img.height * PX_TO_PT]);
+      // Hi-res rasters (svg) keep their intrinsic size on the page.
+      const pt = PX_TO_PT / (source.pages[page.pageIndex].pixelRatio ?? 1);
+      const pdfPage = out.addPage([img.width * pt, img.height * pt]);
       pdfPage.drawImage(img, { x: 0, y: 0, width: pdfPage.getWidth(), height: pdfPage.getHeight() });
       pdfPage.setRotation(degrees(page.rotation));
     }

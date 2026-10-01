@@ -1,4 +1,4 @@
-import { fileKind, exportFileName } from './fileKind';
+import { fileKind, exportFileName, isSvg } from './fileKind';
 
 const file = (name: string, type: string) => new File(['x'], name, { type });
 
@@ -14,9 +14,26 @@ describe('fileKind', () => {
     expect(fileKind(file('a.webp', 'image/webp'))).toBe('image');
   });
 
+  it('detects svgs as images by mime type or extension', () => {
+    expect(fileKind(file('a.svg', 'image/svg+xml'))).toBe('image');
+    expect(fileKind(file('drawing', 'image/svg+xml'))).toBe('image');
+    expect(fileKind(file('A.SVG', ''))).toBe('image');
+  });
+
   it('rejects everything else', () => {
     expect(fileKind(file('a.txt', 'text/plain'))).toBeNull();
-    expect(fileKind(file('a.svg', 'image/svg+xml'))).toBeNull();
+    expect(fileKind(file('a.svg.txt', ''))).toBeNull();
+    expect(fileKind(file('a.svgz', ''))).toBeNull();
+  });
+});
+
+describe('isSvg', () => {
+  it('detects svgs by mime type, or by extension when the mime type is empty', () => {
+    expect(isSvg(file('a.svg', 'image/svg+xml'))).toBe(true);
+    expect(isSvg(file('drawing', 'image/svg+xml'))).toBe(true);
+    expect(isSvg(file('a.Svg', ''))).toBe(true);
+    expect(isSvg(file('a.png', 'image/png'))).toBe(false);
+    expect(isSvg(file('a.svg', 'image/png'))).toBe(false);
   });
 });
 

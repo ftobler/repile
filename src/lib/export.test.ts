@@ -134,6 +134,27 @@ describe('image export', () => {
     expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 300, 200);
   });
 
+  it('sizes image pages in a pdf by their css size, so hi-res svg rasters keep their intrinsic size', async () => {
+    // a real 4x2 px PNG, as the canvas would encode it
+    const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAC0lEQVR4nGNgwAUAABoAAbw84EEAAAAASUVORK5CYII='), (c) => c.charCodeAt(0));
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (cb, type) {
+      cb(new Blob([png], { type }));
+    });
+    const photo = imageSource('photo', 4, 2);
+    const svg = { ...imageSource('svg', 4, 2), mime: 'image/svg+xml' };
+    svg.pages = [{ ...svg.pages[0], pixelRatio: 2 }];
+    const lookup = (id: string) => ({ photo, svg })[id];
+
+    const out = await PDFDocument.load(await exportPdf([page('photo', 0), page('svg', 0, { rotation: 90 })], lookup));
+
+    const sizes = out.getPages().map((p) => [p.getWidth(), p.getHeight()]);
+    expect(sizes).toEqual([
+      [3, 1.5],
+      [1.5, 0.75],
+    ]);
+    expect(out.getPages()[1].getRotation().angle).toBe(90);
+  });
+
   it('rasterizes pdf pages at the export scale', async () => {
     const pdf = pdfSource('p', new ArrayBuffer(0), 1);
     const bitmap = { image: document.createElement('canvas'), width: 200, height: 400 };

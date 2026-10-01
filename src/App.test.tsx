@@ -175,6 +175,19 @@ describe('loading files', () => {
     await waitFor(() => expect(tiles()).toHaveLength(1));
   });
 
+  it('accepts svg files, even without a mime type', async () => {
+    const { user, loadSource } = setup();
+    expect(screen.getByLabelText(/choose files/i)).toHaveAttribute('accept', expect.stringMatching(/image\/svg\+xml.*\.svg/));
+    fireEvent.change(screen.getByLabelText(/choose files/i), {
+      target: { files: [new File(['<svg/>'], 'logo.svg', { type: 'image/svg+xml' }), new File(['<svg/>'], 'icon.svg')] },
+    });
+    await waitFor(() => expect(tileLabels()).toEqual(['logo.svg', 'icon.svg']));
+    expect(loadSource).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await user.click(within(tiles()[1]).getByRole('button', { name: /rotate right/i }));
+    expect(tiles()[1]).toHaveAttribute('data-rotation', '90');
+  });
+
   it('reports unsupported files and keeps going', async () => {
     setup();
     fireEvent.change(screen.getByLabelText(/choose files/i), {

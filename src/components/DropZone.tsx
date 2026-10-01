@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Icon } from './Icon';
 
-export const ACCEPT = 'application/pdf,.pdf,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif';
+export const ACCEPT = 'application/pdf,.pdf,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml,.svg';
 
 interface FileButtonProps {
   onFiles: (files: File[]) => void;

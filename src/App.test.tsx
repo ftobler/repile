@@ -65,6 +65,37 @@ describe('theme', () => {
   });
 });
 
+describe('header links', () => {
+  const corner = () => screen.getByRole('navigation', { name: /site/i });
+
+  it('shows GitHub, static download and theme toggle in that order', () => {
+    setup();
+    const controls = Array.from(corner().querySelectorAll('a, button'));
+    expect(controls.map((c) => c.getAttribute('aria-label'))).toEqual([
+      'Open Repile on GitHub',
+      'Download static build (ZIP)',
+      'Switch to light mode',
+    ]);
+  });
+
+  it('links to the GitHub Pages deployment in a new tab', () => {
+    setup();
+    const link = screen.getByRole('link', { name: 'Open Repile on GitHub' });
+    expect(link).toHaveAttribute('href', 'https://ftobler.github.io/repile/');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveAttribute('title');
+  });
+
+  it('offers the static build zip relative to the app base', () => {
+    setup();
+    const link = screen.getByRole('link', { name: 'Download static build (ZIP)' });
+    expect(link).toHaveAttribute('href', `${import.meta.env.BASE_URL}repile-static.zip`);
+    expect(link).toHaveAttribute('download', 'repile-static.zip');
+    expect(link).toHaveAttribute('title');
+  });
+});
+
 describe('layout', () => {
   it('keeps all page tools in one floating toolbar, separate from the theme toggle', async () => {
     const { user } = setup();

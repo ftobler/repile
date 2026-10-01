@@ -119,9 +119,16 @@ input {
   font-size: 13px;
 }
 
-.theme {
+.corner {
   grid-area: theme;
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+a.tool {
+  text-decoration: none;
 }
 
 .tools {

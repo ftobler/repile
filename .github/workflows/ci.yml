@@ -30,6 +30,16 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
       - name: SPA fallback
         run: cp dist/index.html dist/404.html
+      # Self-hosting download: same app built for a domain root, zipped into
+      # the Pages output so it is served at <pages-url>/repile-static.zip.
+      - name: Static build (base /)
+        run: |
+          out="$RUNNER_TEMP/repile-static"
+          npx vite build --outDir "$out" --emptyOutDir
+          cp "$out/index.html" "$out/404.html"
+          cd "$RUNNER_TEMP" && python3 -m zipfile -c "$GITHUB_WORKSPACE/dist/repile-static.zip" repile-static/
+        env:
+          VITE_BASE: /
       - if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
       - if: github.ref == 'refs/heads/main'

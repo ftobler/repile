@@ -4,6 +4,7 @@ import { EmptyState, FileButton } from './components/DropZone';
 import { ExportBar } from './components/ExportBar';
 import { Icon } from './components/Icon';
 import { PageGrid } from './components/PageGrid';
+import { GitHubLink, StaticDownloadLink } from './components/HeaderLinks';
 import { PerRowPicker } from './components/PerRowPicker';
 import { ThemeToggle } from './components/ThemeToggle';
 import { TileSizePicker } from './components/TileSizePicker';
@@ -193,9 +194,11 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
             <ExportBar format={format} onFormat={setFormat} onExport={onExport} busy={exporting} pageCount={pages.length} />
           </div>
         )}
-        <div className="theme">
+        <nav className="corner" aria-label="Site">
+          <GitHubLink />
+          <StaticDownloadLink />
           <ThemeToggle theme={theme} onToggle={toggle} />
-        </div>
+        </nav>
       </header>
 
       {errors.length > 0 && (

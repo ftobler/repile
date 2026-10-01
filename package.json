@@ -11,8 +11,8 @@
     "typecheck": "tsc -b",
     "lint": "eslint ."
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Florin Tobler",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

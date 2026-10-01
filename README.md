@@ -20,3 +20,7 @@ just build
 - `src/components` – React UI
 
 PDF pages are exported by copying the original page (vector content stays intact), with rotation and crop box applied. Images, and every page in the PNG/JPEG collage, are rasterized; PDF pages are rendered at 144 dpi. SVGs are rasterized once on load at 2048 px on their longest side (through an `<img>`, so their scripts never run); in a PDF they keep their intrinsic size, taken from `width`/`height`, else the `viewBox`, else 1024 px.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

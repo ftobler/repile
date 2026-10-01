@@ -89,9 +89,11 @@ input {
   grid-template-areas: 'brand tools theme';
   align-items: center;
   gap: 16px;
-  padding: 14px 20px 22px;
+  padding: 14px 20px 48px;
+  /* the fade area overlaps the content instead of pushing it down */
+  margin-bottom: -30px;
   /* no bar: fade the page out under the floating tools instead */
-  background: linear-gradient(var(--bg) 55%, color-mix(in srgb, var(--bg) 0%, transparent));
+  background: linear-gradient(var(--bg), transparent);
   pointer-events: none;
 }
 
@@ -226,7 +228,8 @@ input {
 .content {
   flex: 1;
   position: relative;
-  padding: 4px 20px 20px;
+  /* 30px makes up for the header's negative margin, so nothing starts under the fade */
+  padding: 34px 20px 20px;
 }
 
 .loading {

@@ -336,9 +336,6 @@ input {
   margin: 6vh auto 0;
   padding: 48px 32px;
   text-align: center;
-  border: 2px dashed var(--border);
-  border-radius: 18px;
-  background: var(--surface);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -383,10 +380,6 @@ input {
 
 .empty-art span:nth-child(3) {
   transform: translate(0, 12px);
-}
-
-.drop-active .empty {
-  border-color: var(--accent);
 }
 
 .drop-overlay {

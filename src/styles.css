@@ -170,6 +170,12 @@ input {
   background: var(--surface-2);
 }
 
+.tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+}
+
 .tool.danger:hover {
   color: var(--danger);
 }

@@ -28,14 +28,27 @@ export type PagesAction =
 
 export const initialPagesState: PagesState = { pages: [] };
 
+/** Applies `fn` to one page; returns `state` itself if nothing changed. */
 function update(state: PagesState, id: string, fn: (p: Page) => Page): PagesState {
-  return { pages: state.pages.map((p) => (p.id === id ? fn(p) : p)) };
+  let changed = false;
+  const pages = state.pages.map((p) => {
+    if (p.id !== id) return p;
+    const next = fn(p);
+    changed ||= next !== p;
+    return next;
+  });
+  return changed ? { pages } : state;
+}
+
+function rotated(p: Page, by: number): Page {
+  const rotation = normalizeRotation(p.rotation + by);
+  return rotation === p.rotation ? p : { ...p, rotation };
 }
 
 export function pagesReducer(state: PagesState, action: PagesAction): PagesState {
   switch (action.type) {
     case 'add':
-      return { pages: [...state.pages, ...action.pages] };
+      return action.pages.length ? { pages: [...state.pages, ...action.pages] } : state;
     case 'move': {
       const from = state.pages.findIndex((p) => p.id === action.id);
       const to = state.pages.findIndex((p) => p.id === action.overId);
@@ -46,13 +59,16 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
       return { pages };
     }
     case 'rotate':
-      return update(state, action.id, (p) => ({ ...p, rotation: normalizeRotation(p.rotation + action.by) }));
+      return update(state, action.id, (p) => rotated(p, action.by));
     case 'rotateAll':
-      return { pages: state.pages.map((p) => ({ ...p, rotation: normalizeRotation(p.rotation + action.by) })) };
-    case 'remove':
-      return { pages: state.pages.filter((p) => p.id !== action.id) };
+      if (state.pages.length === 0 || normalizeRotation(action.by) === 0) return state;
+      return { pages: state.pages.map((p) => rotated(p, action.by)) };
+    case 'remove': {
+      const pages = state.pages.filter((p) => p.id !== action.id);
+      return pages.length === state.pages.length ? state : { pages };
+    }
     case 'crop':
-      return update(state, action.id, (p) => ({ ...p, crop: action.crop }));
+      return update(state, action.id, (p) => (p.crop === action.crop ? p : { ...p, crop: action.crop }));
     case 'duplicate': {
       const i = state.pages.findIndex((p) => p.id === action.id);
       if (i < 0) return state;
@@ -61,6 +77,6 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
       return { pages };
     }
     case 'clear':
-      return initialPagesState;
+      return state.pages.length ? initialPagesState : state;
   }
 }

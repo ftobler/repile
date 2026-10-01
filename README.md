@@ -1,6 +1,6 @@
 # Repile
 
-Rearrange your pages. Drop PDFs or images in, then reorder, rotate, crop, duplicate or remove pages in a tile grid and export them as a PDF or as PNG/JPEG images (several images come as a `.zip`). Everything runs in the browser and nothing is uploaded.
+Rearrange your pages. Drop PDFs or images in, then reorder, rotate, crop, duplicate or remove pages in a tile grid and export them as a PDF or as PNG/JPEG images (several images come as a `.zip`). Every edit can be undone (Ctrl/⌘+Z) and redone (Ctrl/⌘+Shift+Z or Ctrl+Y). Everything runs in the browser and nothing is uploaded.
 
 ## Development
 

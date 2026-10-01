@@ -73,6 +73,19 @@ describe('pagesReducer', () => {
     expect(pagesReducer(state('a', 'b'), { type: 'clear' }).pages).toEqual([]);
   });
 
+  it('returns the same state for actions that change nothing', () => {
+    const s = state('a');
+    const empty = state();
+    expect(pagesReducer(s, { type: 'rotate', id: 'zzz', by: 90 })).toBe(s);
+    expect(pagesReducer(s, { type: 'rotate', id: 'a', by: 360 })).toBe(s);
+    expect(pagesReducer(s, { type: 'remove', id: 'zzz' })).toBe(s);
+    expect(pagesReducer(s, { type: 'crop', id: 'zzz', crop: null })).toBe(s);
+    expect(pagesReducer(s, { type: 'crop', id: 'a', crop: null })).toBe(s);
+    expect(pagesReducer(s, { type: 'add', pages: [] })).toBe(s);
+    expect(pagesReducer(empty, { type: 'rotateAll', by: 90 })).toBe(empty);
+    expect(pagesReducer(empty, { type: 'clear' })).toBe(empty);
+  });
+
   it('does not mutate the previous state', () => {
     const s = state('a', 'b');
     const snapshot = structuredClone(s);

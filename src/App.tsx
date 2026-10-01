@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useReducer, useState, type DragEvent } from 'react';
 import { CropDialog } from './components/CropDialog';
 import { EmptyState, FileButton } from './components/DropZone';
 import { ExportBar } from './components/ExportBar';
@@ -9,6 +9,7 @@ import { TileSizePicker } from './components/TileSizePicker';
 import type { ExportResult, SourceLookup } from './lib/export';
 import type { Source } from './lib/sources';
 import { fileKind, type ExportFormat } from './model/fileKind';
+import { initHistory, withHistory } from './model/history';
 import { initialPagesState, pagesReducer, type Page } from './model/pages';
 import { useTheme } from './useTheme';
 import { useTileSize } from './useTileSize';
@@ -23,6 +24,19 @@ export interface AppProps {
 const defaultLoad: NonNullable<AppProps['loadSource']> = (file) => import('./lib/sources').then((m) => m.loadSource(file));
 const defaultExport: NonNullable<AppProps['exporter']> = (...args) => import('./lib/export').then((m) => m.exportPages(...args));
 const defaultDownload: NonNullable<AppProps['download']> = (r) => void import('./lib/export').then((m) => m.download(r));
+
+const historyReducer = withHistory(pagesReducer);
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+const MOD = isMac ? '⌘' : 'Ctrl+';
+
+/** Text fields keep their own undo; everything else gets the page history. */
+function isTextField(el: EventTarget | null) {
+  return (
+    el instanceof HTMLElement &&
+    (el.isContentEditable || el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['range', 'radio', 'checkbox', 'file', 'button'].includes(el.type)))
+  );
+}
 
 function pagesOf(source: Source): Page[] {
   const multi = source.kind === 'pdf';
@@ -39,7 +53,10 @@ function pagesOf(source: Source): Page[] {
 export default function App({ loadSource = defaultLoad, exporter = defaultExport, download = defaultDownload }: AppProps) {
   const { theme, toggle } = useTheme();
   const [tileSize, setTileSize] = useTileSize();
-  const [{ pages }, dispatch] = useReducer(pagesReducer, initialPagesState);
+  const [history, dispatch] = useReducer(historyReducer, initialPagesState, initHistory);
+  const { pages } = history.present;
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
   const [sources, setSources] = useState<ReadonlyMap<string, Source>>(new Map());
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(0);
@@ -70,6 +87,20 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
     },
     [loadSource],
   );
+
+  useEffect(() => {
+    if (cropping) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || isTextField(e.target)) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') dispatch({ type: e.shiftKey ? 'redo' : 'undo' });
+      else if (key === 'y' && !e.shiftKey) dispatch({ type: 'redo' });
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [cropping]);
 
   const sourcePage = (page: Page) => sources.get(page.sourceId)?.pages[page.pageIndex];
 
@@ -117,11 +148,18 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
           <span className="brand-name">Repile</span>
           <span className="muted brand-tag">rearrange your pages</span>
         </div>
-        {pages.length > 0 && (
+        {(pages.length > 0 || canUndo || canRedo) && (
           <div className="tools" role="toolbar" aria-label="Page tools">
             <span className="count" title={`${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`}>
               {pages.length}
             </span>
+            <button type="button" className="tool" aria-label="Undo" title={`Undo (${MOD}Z)`} disabled={!canUndo} onClick={() => dispatch({ type: 'undo' })}>
+              <Icon name="undo" />
+            </button>
+            <button type="button" className="tool" aria-label="Redo" title={`Redo (${MOD}${isMac ? '⇧Z' : 'Y'})`} disabled={!canRedo} onClick={() => dispatch({ type: 'redo' })}>
+              <Icon name="redo" />
+            </button>
+            <span className="divider" aria-hidden="true" />
             <FileButton onFiles={addFiles} label="Add files" />
             <button type="button" className="tool" aria-label="Rotate all left" title="Rotate all left" onClick={() => dispatch({ type: 'rotateAll', by: -90 })}>
               <Icon name="rotateLeft" />

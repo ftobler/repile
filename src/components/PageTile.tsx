@@ -50,7 +50,12 @@ export function PageTile({ page, index, sourcePage, onRotate, onCrop, onDuplicat
           {page.label}
         </span>
       </div>
-      <div className="tile-actions" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <div
+        className="tile-actions"
+        onPointerDown={(e) => e.stopPropagation()}
+        // Space/Enter on a button must not pick up the tile; other keys (shortcuts) pass through.
+        onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && e.stopPropagation()}
+      >
         <Action icon="rotateLeft" label="Rotate left" onClick={() => onRotate(page.id, -90)} />
         <Action icon="rotateRight" label="Rotate right" onClick={() => onRotate(page.id, 90)} />
         <Action icon="crop" label="Crop" onClick={() => onCrop(page.id)} />

@@ -203,6 +203,58 @@ describe('editing tiles', () => {
   });
 });
 
+describe('undo / redo', () => {
+  const undo = () => screen.getByRole('button', { name: /^undo/i });
+  const redo = () => screen.getByRole('button', { name: /^redo/i });
+
+  it('undoes and redoes edits from the toolbar', async () => {
+    const { user } = setup();
+    await addFiles(user, pdf());
+    expect(redo()).toBeDisabled();
+    await user.click(within(tiles()[0]).getByRole('button', { name: /rotate right/i }));
+    await user.click(within(tiles()[1]).getByRole('button', { name: /remove/i }));
+    expect(tileLabels()).toEqual(['doc.pdf · 1', 'doc.pdf · 3']);
+
+    await user.click(undo());
+    expect(tileLabels()).toEqual(['doc.pdf · 1', 'doc.pdf · 2', 'doc.pdf · 3']);
+    await user.click(undo());
+    expect(tiles()[0]).toHaveAttribute('data-rotation', '0');
+
+    await user.click(redo());
+    expect(tiles()[0]).toHaveAttribute('data-rotation', '90');
+  });
+
+  it('can bring pages back after clearing everything', async () => {
+    const { user } = setup();
+    await addFiles(user, pdf());
+    await user.click(screen.getByRole('button', { name: /clear all/i }));
+    expect(tiles()).toHaveLength(0);
+    await user.click(undo());
+    expect(tiles()).toHaveLength(3);
+  });
+
+  it('supports keyboard shortcuts', async () => {
+    const { user } = setup();
+    await addFiles(user, png());
+    await user.click(within(tiles()[0]).getByRole('button', { name: /duplicate/i }));
+    expect(tiles()).toHaveLength(2);
+
+    await user.keyboard('{Control>}z{/Control}');
+    expect(tiles()).toHaveLength(1);
+    await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}');
+    expect(tiles()).toHaveLength(2);
+    await user.keyboard('{Meta>}z{/Meta}');
+    expect(tiles()).toHaveLength(1);
+    await user.keyboard('{Control>}y{/Control}');
+    expect(tiles()).toHaveLength(2);
+  });
+
+  it('starts without anything to undo', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: /^undo/i })).not.toBeInTheDocument();
+  });
+});
+
 describe('export', () => {
   it('exports pages in grid order in the chosen format', async () => {
     const { user, exporter, download } = setup();

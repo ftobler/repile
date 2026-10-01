@@ -1,6 +1,6 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { configDefaults } from 'vitest/config';
 
 export default defineConfig({
   // CI sets this to /<repo>/ for GitHub Pages.
@@ -11,5 +11,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    exclude: [...configDefaults.exclude, '**/.claude/**'],
   },
 });

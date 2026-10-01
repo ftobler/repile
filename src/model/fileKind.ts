@@ -10,10 +10,9 @@ export function fileKind(file: File): FileKind | null {
   return null;
 }
 
-const EXT: Record<ExportFormat | 'zip', string> = { pdf: 'pdf', png: 'png', jpeg: 'jpg', zip: 'zip' };
+const EXT: Record<ExportFormat, string> = { pdf: 'pdf', png: 'png', jpeg: 'jpg' };
 
-export function exportFileName(firstName: string | undefined, format: ExportFormat | 'zip', index?: number): string {
+export function exportFileName(firstName: string | undefined, format: ExportFormat): string {
   const base = firstName ? firstName.replace(/\.[^.]+$/, '') : 'repile';
-  const suffix = index === undefined ? '' : `-${index}`;
-  return `${base}-repiled${suffix}.${EXT[format]}`;
+  return `${base}-repiled.${EXT[format]}`;
 }

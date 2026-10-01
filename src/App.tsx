@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useReducer, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState, type DragEvent } from 'react';
 import { CropDialog } from './components/CropDialog';
 import { EmptyState, FileButton } from './components/DropZone';
 import { ExportBar } from './components/ExportBar';
 import { Icon } from './components/Icon';
 import { PageGrid } from './components/PageGrid';
+import { PerRowPicker } from './components/PerRowPicker';
 import { ThemeToggle } from './components/ThemeToggle';
 import { TileSizePicker } from './components/TileSizePicker';
 import type { ExportResult, SourceLookup } from './lib/export';
+import { PDF_EXPORT_SCALE } from './lib/render';
 import type { Source } from './lib/sources';
+import { collageLayout, exportPixelSize } from './model/collage';
 import { fileKind, type ExportFormat } from './model/fileKind';
 import { initHistory, withHistory } from './model/history';
 import { initialPagesState, pagesReducer, type Page } from './model/pages';
@@ -16,7 +19,7 @@ import { useTileSize } from './useTileSize';
 
 export interface AppProps {
   loadSource?: (file: File) => Promise<Source>;
-  exporter?: (pages: Page[], lookup: SourceLookup, format: ExportFormat, firstName?: string) => Promise<ExportResult>;
+  exporter?: (pages: Page[], lookup: SourceLookup, format: ExportFormat, firstName?: string, perRow?: number) => Promise<ExportResult>;
   download?: (result: ExportResult) => void;
 }
 
@@ -54,7 +57,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
   const { theme, toggle } = useTheme();
   const [tileSize, setTileSize] = useTileSize();
   const [history, dispatch] = useReducer(historyReducer, initialPagesState, initHistory);
-  const { pages } = history.present;
+  const { pages, perRow } = history.present;
   const canUndo = history.past.length > 0;
   const canRedo = history.future.length > 0;
   const [sources, setSources] = useState<ReadonlyMap<string, Source>>(new Map());
@@ -104,11 +107,24 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
 
   const sourcePage = (page: Page) => sources.get(page.sourceId)?.pages[page.pageIndex];
 
+  // PNG/JPEG export combines everything into one collage, so preview exactly that.
+  const imageMode = format !== 'pdf';
+  const collage = useMemo(() => {
+    if (!imageMode) return undefined;
+    const sizes = pages.map((p) => {
+      const source = sources.get(p.sourceId);
+      const sp = source?.pages[p.pageIndex];
+      if (!source || !sp) return { width: 1, height: 1 };
+      return exportPixelSize(sp, source.kind === 'pdf' ? PDF_EXPORT_SCALE : 1, p.rotation, p.crop);
+    });
+    return { layout: collageLayout(sizes, perRow), perRow };
+  }, [imageMode, pages, sources, perRow]);
+
   const onExport = async () => {
     setExporting(true);
     try {
       const first = sources.get(pages[0].sourceId)?.name;
-      download(await exporter(pages, (id) => sources.get(id), format, first));
+      download(await exporter(pages, (id) => sources.get(id), format, first, perRow));
     } catch (err) {
       console.error(err);
       setErrors((e) => [...e, 'Export failed']);
@@ -150,7 +166,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
         </div>
         {(pages.length > 0 || canUndo || canRedo) && (
           <div className="tools" role="toolbar" aria-label="Page tools">
-            <span className="count" title={`${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`}>
+            <span className="count" title={`${pages.length} ${imageMode ? 'image' : 'page'}${pages.length === 1 ? '' : 's'}`}>
               {pages.length}
             </span>
             <button type="button" className="tool" aria-label="Undo" title={`Undo (${MOD}Z)`} disabled={!canUndo} onClick={() => dispatch({ type: 'undo' })}>
@@ -172,6 +188,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
             </button>
             <span className="divider" aria-hidden="true" />
             <TileSizePicker value={tileSize} onChange={setTileSize} />
+            {imageMode && <PerRowPicker value={perRow} onChange={(value) => dispatch({ type: 'perRow', value })} />}
             <span className="divider" aria-hidden="true" />
             <ExportBar format={format} onFormat={setFormat} onExport={onExport} busy={exporting} pageCount={pages.length} />
           </div>
@@ -202,6 +219,7 @@ export default function App({ loadSource = defaultLoad, exporter = defaultExport
             pages={pages}
             tileSize={tileSize}
             sourcePage={sourcePage}
+            collage={collage}
             onMove={(id, overId) => dispatch({ type: 'move', id, overId })}
             onRotate={(id, by) => dispatch({ type: 'rotate', id, by })}
             onCrop={setCropping}

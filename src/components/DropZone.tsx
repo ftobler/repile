@@ -50,7 +50,7 @@ export function EmptyState({ onFiles }: { onFiles: (files: File[]) => void }) {
         <span />
       </div>
       <h1>Drop PDFs or images here</h1>
-      <p className="muted">Pages land in a grid where you can reorder, rotate, crop and remove them, then export as PDF, PNG or JPEG. Everything stays in your browser.</p>
+      <p className="muted">Pages land in a grid where you can reorder, rotate, crop and remove them, then export them as a PDF or combine them into one PNG or JPEG collage. Everything stays in your browser.</p>
       <FileButton onFiles={onFiles} label="Choose files" primary />
     </div>
   );

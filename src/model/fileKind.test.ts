@@ -26,8 +26,7 @@ describe('exportFileName', () => {
     expect(exportFileName('photo.final.jpg', 'png')).toBe('photo.final-repiled.png');
   });
 
-  it('numbers pages and falls back to "repile"', () => {
-    expect(exportFileName(undefined, 'jpeg', 3)).toBe('repile-repiled-3.jpg');
-    expect(exportFileName('x.pdf', 'zip')).toBe('x-repiled.zip');
+  it('falls back to "repile"', () => {
+    expect(exportFileName(undefined, 'jpeg')).toBe('repile-repiled.jpg');
   });
 });

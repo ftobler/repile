@@ -1,8 +1,8 @@
 import { PDFDocument, degrees } from 'pdf-lib';
-import { zipSync } from 'fflate';
+import { collageLayout, exportPixelSize } from '../model/collage';
 import { cropToPdfBox } from '../model/geometry';
 import { exportFileName, type ExportFormat } from '../model/fileKind';
-import type { Page } from '../model/pages';
+import { DEFAULT_PER_ROW, type Page } from '../model/pages';
 import { PDF_EXPORT_SCALE, canvasToBlob, drawPage } from './render';
 import type { Source } from './sources';
 
@@ -63,17 +63,43 @@ export async function exportPdf(pages: Page[], lookup: SourceLookup): Promise<Ui
   return out.save();
 }
 
-/** One image for a single page, otherwise a zip with one image per page. */
-export async function exportImages(pages: Page[], lookup: SourceLookup, format: 'png' | 'jpeg', firstName?: string) {
-  const blobs = [];
-  for (const page of pages) blobs.push(await rasterize(page, sourceOf(page, lookup), format));
-  if (blobs.length === 1) return { blob: blobs[0], fileName: exportFileName(firstName, format) };
+/** Raster scale of a source in image export: PDF pages in points, images 1:1. */
+const rasterScale = (source: Source) => (source.kind === 'pdf' ? PDF_EXPORT_SCALE : 1);
 
-  const files: Record<string, [Uint8Array, { level: 0 }]> = {};
-  for (let i = 0; i < blobs.length; i++) {
-    files[exportFileName(firstName, format, i + 1)] = [new Uint8Array(await blobs[i].arrayBuffer()), { level: 0 }];
+/** All pages combined into one image, `perRow` per row (see collageLayout). */
+export async function exportCollage(
+  pages: Page[],
+  lookup: SourceLookup,
+  format: 'png' | 'jpeg',
+  perRow: number,
+  firstName?: string,
+): Promise<ExportResult> {
+  const sources = pages.map((p) => sourceOf(p, lookup));
+  const sizes = pages.map((p, i) => exportPixelSize(sources[i].pages[p.pageIndex], rasterScale(sources[i]), p.rotation, p.crop));
+  const layout = collageLayout(sizes, perRow);
+  const background = format === 'jpeg' ? '#ffffff' : undefined;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = layout.width;
+  canvas.height = layout.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas is not available');
+  if (background) {
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, layout.width, layout.height);
   }
-  return { blob: new Blob([zipSync(files)], { type: 'application/zip' }), fileName: exportFileName(firstName, 'zip') };
+  ctx.imageSmoothingQuality = 'high';
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const bitmap = await sources[i].pages[page.pageIndex].render(rasterScale(sources[i]));
+    const tile = drawPage(bitmap, { rotation: page.rotation, crop: page.crop, background });
+    const { x, y, width, height } = layout.items[i];
+    ctx.drawImage(tile, x, y, width, height);
+  }
+
+  const blob = await canvasToBlob(canvas, format === 'png' ? 'image/png' : 'image/jpeg');
+  return { blob, fileName: exportFileName(firstName, format) };
 }
 
 export async function exportPages(
@@ -81,12 +107,13 @@ export async function exportPages(
   lookup: SourceLookup,
   format: ExportFormat,
   firstName?: string,
+  perRow = DEFAULT_PER_ROW,
 ): Promise<ExportResult> {
   if (format === 'pdf') {
     const bytes = await exportPdf(pages, lookup);
     return { blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }), fileName: exportFileName(firstName, 'pdf') };
   }
-  return exportImages(pages, lookup, format, firstName);
+  return exportCollage(pages, lookup, format, perRow, firstName);
 }
 
 export function download({ blob, fileName }: ExportResult) {

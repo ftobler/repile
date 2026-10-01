@@ -16,7 +16,6 @@ interface Props {
 }
 
 export function ExportBar({ format, onFormat, onExport, busy, pageCount }: Props) {
-  const zipped = format !== 'pdf' && pageCount > 1;
   return (
     <div className="export">
       <div className="segmented" role="radiogroup" aria-label="Export format">
@@ -27,9 +26,9 @@ export function ExportBar({ format, onFormat, onExport, busy, pageCount }: Props
           </label>
         ))}
       </div>
-      <button type="button" className="button primary" onClick={onExport} disabled={busy || pageCount === 0} title={zipped ? 'Images are bundled into a .zip' : undefined}>
+      <button type="button" className="button primary" onClick={onExport} disabled={busy || pageCount === 0} title={format === 'pdf' ? 'One page per tile' : 'Everything combined into one image'}>
         <Icon name="download" />
-        {busy ? 'Exporting…' : zipped ? 'Export .zip' : 'Export'}
+        {busy ? 'Exporting…' : 'Export'}
       </button>
     </div>
   );

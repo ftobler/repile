@@ -16,6 +16,8 @@ interface Props extends TileActions {
   page: Page;
   index: number;
   sourcePage: SourcePage | undefined;
+  /** Position inside the collage (CSS lengths); omitted for the page grid. */
+  place?: { left: string; top: string; width: string; height: string };
 }
 
 function Action({ icon, label, onClick, danger }: { icon: IconName; label: string; onClick: () => void; danger?: boolean }) {
@@ -26,19 +28,20 @@ function Action({ icon, label, onClick, danger }: { icon: IconName; label: strin
   );
 }
 
-export function PageTile({ page, index, sourcePage, onRotate, onCrop, onDuplicate, onRemove }: Props) {
+export function PageTile({ page, index, sourcePage, place, onRotate, onCrop, onDuplicate, onRemove }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
 
   return (
     <li
       ref={setNodeRef}
       className={`tile${isDragging ? ' dragging' : ''}`}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      style={{ ...place, transform: CSS.Translate.toString(transform), transition }}
       data-rotation={page.rotation}
       {...attributes}
       {...listeners}
       role="listitem"
-      aria-roledescription="sortable page"
+      aria-roledescription={place ? 'sortable image' : 'sortable page'}
+      title={place ? page.label : undefined}
     >
       <div className="tile-thumb">
         {sourcePage && <PageThumb page={sourcePage} rotation={page.rotation} crop={page.crop} />}

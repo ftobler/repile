@@ -14,6 +14,8 @@ export interface Page {
 
 export interface PagesState {
   pages: Page[];
+  /** Items per row when the pages are combined into one collage image. */
+  perRow: number;
 }
 
 export type PagesAction =
@@ -24,9 +26,12 @@ export type PagesAction =
   | { type: 'remove'; id: string }
   | { type: 'crop'; id: string; crop: Rect | null }
   | { type: 'duplicate'; id: string; newId: string }
-  | { type: 'clear' };
+  | { type: 'clear' }
+  | { type: 'perRow'; value: number };
 
-export const initialPagesState: PagesState = { pages: [] };
+export const DEFAULT_PER_ROW = 3;
+
+export const initialPagesState: PagesState = { pages: [], perRow: DEFAULT_PER_ROW };
 
 /** Applies `fn` to one page; returns `state` itself if nothing changed. */
 function update(state: PagesState, id: string, fn: (p: Page) => Page): PagesState {
@@ -37,7 +42,7 @@ function update(state: PagesState, id: string, fn: (p: Page) => Page): PagesStat
     changed ||= next !== p;
     return next;
   });
-  return changed ? { pages } : state;
+  return changed ? { ...state, pages } : state;
 }
 
 function rotated(p: Page, by: number): Page {
@@ -48,7 +53,7 @@ function rotated(p: Page, by: number): Page {
 export function pagesReducer(state: PagesState, action: PagesAction): PagesState {
   switch (action.type) {
     case 'add':
-      return action.pages.length ? { pages: [...state.pages, ...action.pages] } : state;
+      return action.pages.length ? { ...state, pages: [...state.pages, ...action.pages] } : state;
     case 'move': {
       const from = state.pages.findIndex((p) => p.id === action.id);
       const to = state.pages.findIndex((p) => p.id === action.overId);
@@ -56,16 +61,16 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
       const pages = [...state.pages];
       const [moved] = pages.splice(from, 1);
       pages.splice(to, 0, moved);
-      return { pages };
+      return { ...state, pages };
     }
     case 'rotate':
       return update(state, action.id, (p) => rotated(p, action.by));
     case 'rotateAll':
       if (state.pages.length === 0 || normalizeRotation(action.by) === 0) return state;
-      return { pages: state.pages.map((p) => rotated(p, action.by)) };
+      return { ...state, pages: state.pages.map((p) => rotated(p, action.by)) };
     case 'remove': {
       const pages = state.pages.filter((p) => p.id !== action.id);
-      return pages.length === state.pages.length ? state : { pages };
+      return pages.length === state.pages.length ? state : { ...state, pages };
     }
     case 'crop':
       return update(state, action.id, (p) => (p.crop === action.crop ? p : { ...p, crop: action.crop }));
@@ -74,9 +79,13 @@ export function pagesReducer(state: PagesState, action: PagesAction): PagesState
       if (i < 0) return state;
       const pages = [...state.pages];
       pages.splice(i + 1, 0, { ...state.pages[i], id: action.newId });
-      return { pages };
+      return { ...state, pages };
     }
     case 'clear':
-      return state.pages.length ? initialPagesState : state;
+      return state.pages.length ? { ...state, pages: [] } : state;
+    case 'perRow': {
+      const perRow = Math.max(1, Math.round(action.value));
+      return perRow === state.perRow ? state : { ...state, perRow };
+    }
   }
 }

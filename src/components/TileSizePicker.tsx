@@ -2,7 +2,7 @@ import { TILE_SIZES } from '../useTileSize';
 
 export function TileSizePicker({ value, onChange }: { value: number; onChange: (size: number) => void }) {
   return (
-    <label className="tile-size" title="Tile size">
+    <label className="picker" title="Tile size">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <g fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="3" width="7" height="7" rx="1.5" />

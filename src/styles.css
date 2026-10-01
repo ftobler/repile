@@ -189,20 +189,20 @@ input {
   color: var(--text);
 }
 
-.tile-size {
+.picker {
   position: relative;
   display: flex;
   align-items: center;
   color: var(--muted);
 }
 
-.tile-size svg {
+.picker svg {
   position: absolute;
   left: 10px;
   pointer-events: none;
 }
 
-.tile-size select {
+.picker select {
   appearance: none;
   height: 34px;
   padding: 0 28px 0 32px;
@@ -217,16 +217,16 @@ input {
   cursor: pointer;
 }
 
-.tile-size select:hover {
+.picker select:hover {
   background-color: var(--surface-2);
 }
 
-.tile-size select:focus-visible {
+.picker select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.tile-size option {
+.picker option {
   background: var(--surface);
   color: var(--text);
 }
@@ -704,4 +704,73 @@ input {
     gap: 12px;
   }
 
+}
+
+/* ---------- collage (image mode) ---------- */
+
+.collage {
+  position: relative;
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  width: 100%;
+  /* the tile size sets how large an item in a row is previewed */
+  max-width: calc(var(--tile-size, 240px) * var(--per-row, 3));
+  background: var(--thumb-bg);
+  box-shadow: var(--shadow);
+}
+
+.collage .tile {
+  position: absolute;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.collage .tile:hover,
+.collage .tile:focus-visible,
+.collage .tile.dragging {
+  z-index: 5;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.collage .tile-thumb {
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+}
+
+.collage .tile-thumb canvas {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  box-shadow: none;
+}
+
+.collage .tile-footer {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.collage .tile:hover .tile-footer,
+.collage .tile:focus-within .tile-footer {
+  opacity: 1;
+}
+
+.collage .tile-label {
+  display: none;
+}
+
+.collage .tile-actions {
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 16px);
 }

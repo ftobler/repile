@@ -1,4 +1,4 @@
-import { pagesReducer, type Page, type PagesState } from './pages';
+import { DEFAULT_PER_ROW, initialPagesState, pagesReducer, type Page, type PagesState } from './pages';
 
 const page = (id: string, extra: Partial<Page> = {}): Page => ({
   id,
@@ -10,7 +10,7 @@ const page = (id: string, extra: Partial<Page> = {}): Page => ({
   ...extra,
 });
 
-const state = (...ids: string[]): PagesState => ({ pages: ids.map((id) => page(id)) });
+const state = (...ids: string[]): PagesState => ({ ...initialPagesState, pages: ids.map((id) => page(id)) });
 const ids = (s: PagesState) => s.pages.map((p) => p.id);
 
 describe('pagesReducer', () => {
@@ -69,8 +69,29 @@ describe('pagesReducer', () => {
     expect(s.pages[1]).toMatchObject({ sourceId: 's1', label: 'a' });
   });
 
-  it('clears everything', () => {
-    expect(pagesReducer(state('a', 'b'), { type: 'clear' }).pages).toEqual([]);
+  it('clears all pages but keeps the collage row size', () => {
+    const s = pagesReducer({ ...state('a', 'b'), perRow: 5 }, { type: 'clear' });
+    expect(s.pages).toEqual([]);
+    expect(s.perRow).toBe(5);
+  });
+
+  it('sets the number of items per collage row', () => {
+    expect(initialPagesState.perRow).toBe(DEFAULT_PER_ROW);
+    const s = pagesReducer(state('a'), { type: 'perRow', value: 4 });
+    expect(s.perRow).toBe(4);
+    expect(s.pages).toEqual(state('a').pages);
+    expect(pagesReducer(state('a'), { type: 'perRow', value: 0 }).perRow).toBe(1);
+    expect(pagesReducer(state('a'), { type: 'perRow', value: 2.6 }).perRow).toBe(3);
+  });
+
+  it('keeps the row size through page edits', () => {
+    let s: PagesState = { ...state('a', 'b'), perRow: 2 };
+    s = pagesReducer(s, { type: 'move', id: 'a', overId: 'b' });
+    s = pagesReducer(s, { type: 'rotateAll', by: 90 });
+    s = pagesReducer(s, { type: 'remove', id: 'a' });
+    s = pagesReducer(s, { type: 'duplicate', id: 'b', newId: 'c' });
+    s = pagesReducer(s, { type: 'add', pages: [page('d')] });
+    expect(s.perRow).toBe(2);
   });
 
   it('returns the same state for actions that change nothing', () => {
@@ -84,6 +105,7 @@ describe('pagesReducer', () => {
     expect(pagesReducer(s, { type: 'add', pages: [] })).toBe(s);
     expect(pagesReducer(empty, { type: 'rotateAll', by: 90 })).toBe(empty);
     expect(pagesReducer(empty, { type: 'clear' })).toBe(empty);
+    expect(pagesReducer(s, { type: 'perRow', value: s.perRow })).toBe(s);
   });
 
   it('does not mutate the previous state', () => {
